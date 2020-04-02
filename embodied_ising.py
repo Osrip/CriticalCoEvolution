@@ -51,8 +51,21 @@ settings = {}
 
 class ising:
     # Initialize the network
-    def __init__(self, settings, netsize, Nsensors=2, Nmotors=2, name=None):
+    def __init__(self, settings, netsize, Nsensors=2, Nmotors=2, type='none', name=None):
+
+        if type == 'pred':
+            self.prey_num_env = settings['pop_size_prey']
+
+        elif type == 'prey':
+            self.eat_energy = settings['predator_eat_energy']
+        else:
+            raise Exception('No type defined (either "pred" or "prey")')
+
+
+
         # Create ising model
+        self.type = type
+
         self.size = netsize
         self.Ssize = Nsensors  # Number of sensors
         self.Msize = Nmotors  # Number of sensors
@@ -71,7 +84,7 @@ class ising:
         self.maxRange = sqrt((settings['x_max'] - settings['x_min']) ** 2 +
                              (settings['y_max'] - settings['y_min']) ** 2)
         self.v_max = settings['v_max']
-        self.food_num_env = settings['food_num']
+
 
         self.randomize_state()
         self.xpos = 0.0 #Position
@@ -172,8 +185,9 @@ class ising:
         random_v = np.random.rand() * self.v_max
         self.s[2] = np.tanh(random_v)
 
-        random_energy = np.random.rand() * self.food_num_env
-        self.s[3] = np.tanh(random_energy)
+
+        # random_energy = np.random.rand() * self.prey_num_env <-- This would have to be changed for prey
+        # self.s[3] = np.tanh(random_energy)
 
     def randomize_position(self, settings):
 
@@ -281,12 +295,16 @@ class ising:
 
         # normalize these values to be between -1 and 1
         # TODO: make the numberators (gravitational constants part of the connectivity matrix so it can be mutated)
+        #angle to closest food
         self.s[0] = self.r_food / 180 # self.r_food can only be -180:180
         # self.s[1] = np.tanh(np.log10(self.radius / (self.d_food ** 2 + 1e-6)))  # self.d_food goes from 0 to ~
         # self.s[2] = np.tanh(np.log10(self.org_sens + 1e-10))
+        #distance to closest food
         self.s[1] = np.tanh(self.radius / (self.d_food ** 2 + 1e-6))*2 - 1  # self.d_food goes from 0 to ~
         #self.s[2] = np.tanh((self.org_sens))*2 - 1
+        #velocity
         self.s[2] = np.tanh(self.v)
+        #energy
         self.s[3] = np.tanh(self.energy)
         # print(self.s[0:3])
     
@@ -570,6 +588,15 @@ class ising:
             self.avg_velocity = 0
 
 
+    def respawn(self, settings):
+        if self.type == 'prey':
+            self.xpos = uniform(settings['x_min'], settings['x_max'])
+            self.ypos = uniform(settings['y_min'], settings['y_max'])
+            self.eat_energy = settings['predator_eat_energy']
+        else:
+            raise Exception('You are trying to respawn a predator, which is not possible')
+
+
 #
 # @jit(nopython=True)
 # def SequentialGlauberStepFast(thermalTime, perms, random_vars, s, h, J, Beta):
@@ -766,23 +793,30 @@ def bitfield(n, size):
     x = [0] * (size - len(x)) + x
     return np.array(x)
 
-def extract_plot_information(isings, foods, settings):
-    isings_info = []
-    foods_info = []
-    for I in isings:
+def extract_plot_information(pred_isings, prey_isings, settings):
+    pred_isings_info = []
+    for I in pred_isings:
         if settings['energy_model']:
-            isings_info.append([I.xpos, I.ypos, I.r, I.energy])
+            pred_isings_info.append([I.xpos, I.ypos, I.r, I.energy])
         else:
-            isings_info.append([I.xpos, I.ypos, I.r, I.fitness])
-    for f in foods:
-        foods_info.append([f.xpos, f.ypos])
-    return isings_info, foods_info
+            pred_isings_info.append([I.xpos, I.ypos, I.r, I.fitness])
+
+    prey_isings_info = []
+    for I in prey_isings:
+        if settings['energy_model']:
+            prey_isings_info.append([I.xpos, I.ypos, I.r, I.energy])
+        else:
+            prey_isings_info.append([I.xpos, I.ypos, I.r, I.fitness])
+
+    return pred_isings_info, prey_isings_info
 
 
 
 
-def TimeEvolve(isings, foods, settings, folder, rep, total_timesteps = 0):
-    [ising.reset_state(settings) for ising in isings]
+def TimeEvolve(pred_isings, prey_isings, settings, folder, rep, total_timesteps = 0):
+
+    for isings in (pred_isings, prey_isings):
+        [ising.reset_state(settings) for ising in isings]
 
     T = settings['TimeSteps']
     for I in isings:
@@ -793,8 +827,8 @@ def TimeEvolve(isings, foods, settings, folder, rep, total_timesteps = 0):
 
         fig, ax = plt.subplots()
         #fig.set_size_inches(15, 10)
-        isings_all_timesteps = []
-        foods_all_timesteps = []
+        pred_isings_all_timesteps = []
+        prey_isings_all_timesteps = []
 
 
     '''
@@ -808,18 +842,19 @@ def TimeEvolve(isings, foods, settings, folder, rep, total_timesteps = 0):
         # print('\r', 'Tstep {0}/{1}'.format(t, T), end='')  # , end='\r'
         if not (settings['chg_food_gen'] is None):
             if t == settings['chg_food_gen'][0]:
-                settings['num_food'] = settings['chg_food_gen'][1]
-        if settings['seasons'] == True:
-            foods = seasons(settings, foods, t, T, total_timesteps)
+                settings['pop_size_prey'] = settings['chg_food_gen'][1]
+        # if settings['seasons'] == True:
+        #     # TODO: Make seasons possible in predator prey?
+        #     foods = seasons(settings, foods, t, T, total_timesteps)
 
         # PLOT SIMULATION FRAME
         if settings['plot'] == True and (t % settings['frameRate']) == 0:
             #plot_frame(settings, folder, fig, ax, isings, foods, t, rep)
-            isings_info, foods_info = extract_plot_information(isings, foods, settings)
-            isings_all_timesteps.append(isings_info)
-            foods_all_timesteps.append(foods_info)
+            pred_isings_info, prey_isings_info = extract_plot_information(pred_isings, prey_isings, settings)
+            pred_isings_all_timesteps.append(pred_isings_info)
+            prey_isings_all_timesteps.append(prey_isings_info)
 
-        interact(settings, isings, foods)
+        interact(settings, pred_isings, prey_isings)
 
             
         
@@ -845,7 +880,8 @@ def TimeEvolve(isings, foods, settings, folder, rep, total_timesteps = 0):
     if settings['plot']:
         #plotting.animate_plot(artist_list, settings, ax, fig)
         # try:
-        plotting.animate_plot_Func(isings_all_timesteps, foods_all_timesteps, settings, ax, fig, rep, t, folder)
+        # TODO: Change this to predator prey!!
+        plotting.animate_plot_Func(pred_isings_all_timesteps, prey_isings_all_timesteps, settings, ax, fig, rep, t, folder)
 
         # except Exception:
         #     print('There occurred an error during animation...the simulation keeps going')
@@ -923,7 +959,7 @@ def GlauberStepParallel(i, s, h, J, Beta, size):
 
 
 
-def EvolutionLearning(isings, foods, settings, Iterations = 1):
+def EvolutionLearning(pred_isings, prey_isings, settings, Iterations = 1):
     '''
     Called by "train"
     '''
@@ -936,7 +972,8 @@ def EvolutionLearning(isings, foods, settings, Iterations = 1):
 
         if not os.path.exists(folder):
             os.makedirs(folder)
-            os.makedirs(folder + 'isings')
+            os.makedirs(folder + 'pred_isings')
+            os.makedirs(folder + 'prey_isings')
             os.makedirs(folder + 'stats')
             os.makedirs(folder + 'figs')
             os.makedirs(folder + 'code')
@@ -961,20 +998,25 @@ def EvolutionLearning(isings, foods, settings, Iterations = 1):
         ''' 
         !!! jede Iteration
         '''
-        for I in isings:
-            I.generation = rep
+
+        for isings in (pred_isings, prey_isings):
+            for I in isings:
+                I.generation = rep
+
+
         if rep in settings['plot_generations']:
             settings['plot'] = True
         else:
             settings['plot'] = False
 
-        TimeEvolve(isings, foods, settings, folder, rep, total_timesteps)
+        TimeEvolve(pred_isings, prey_isings, settings, folder, rep, total_timesteps)
         if settings['energy_model']:
 
-            for I in isings:
-                I.avg_energy = np.mean(I.energies)  # Average or median better?
-                I.avg_velocity = I.all_velocity / settings['TimeSteps']
-            eat_rate = np.average([I.avg_energy for I in isings])
+            for isings in (pred_isings, prey_isings):
+                for I in isings:
+                    I.avg_energy = np.mean(I.energies)  # Average or median better?
+                    I.avg_velocity = I.all_velocity / settings['TimeSteps']
+            eat_rate = np.average([I.avg_energy for I in pred_isings])
 
         if settings['plot'] == True:
             plt.clf()
@@ -983,15 +1025,16 @@ def EvolutionLearning(isings, foods, settings, Iterations = 1):
 
         if rep % settings['evolution_rate'] == 0:
 
-            fitness, fitness_stat = food_fitness(isings)
+            fitness, fitness_stat = food_fitness(pred_isings)
 
             if settings['energy_model'] == False:
                 eat_rate = np.sum(fitness_stat)/settings['TimeSteps'] #avg fitnes, normalized by timestep
 
             if settings['mutateB']:
                 Beta = []
-                for I in isings:
-                    Beta.append(I.Beta)
+                for isings in (pred_isings, prey_isings):
+                    for I in isings:
+                        Beta.append(I.Beta)
 
                 mBeta = np.mean(Beta)
                 stdBeta = np.std(Beta)
@@ -1022,12 +1065,17 @@ def EvolutionLearning(isings, foods, settings, Iterations = 1):
             if settings['save_data']:
                 if settings['energy_model']:
                     # Clear I.energies in isings_copy before saving
-                    isings_copy = deepcopy(isings)
-                    for I in isings_copy:
-                        I.energies = []
+                    pred_isings_copy = deepcopy(pred_isings)
+                    for Id in pred_isings_copy:
+                        Id.energies = []
 
-                    save_sim(folder, isings_copy, fitness_stat, mutationrate, fitC, fitm, rep)
-                    del isings_copy
+                    prey_isings_copy = deepcopy(prey_isings)
+                    for Iy in prey_isings_copy:
+                        Iy.energies = []
+
+                    save_sim(folder, pred_isings_copy, prey_isings_copy, fitness_stat, mutationrate, fitC, fitm, rep)
+                    del pred_isings_copy
+                    del prey_isings_copy
                 else:
                     save_sim(folder, isings, fitness_stat, mutationrate, fitC, fitm, rep)
 
@@ -1041,7 +1089,8 @@ def EvolutionLearning(isings, foods, settings, Iterations = 1):
             Does every evolution event represent one generation?
             '''
 
-            isings = evolve(settings, isings, rep)
+            pred_isings = evolve(settings, pred_isings, rep, 'pred')
+            prey_isings = evolve(settings, prey_isings, rep, 'prey')
 
         #Refreshing of plots
         if not settings['refresh_plot'] is 0:
@@ -1096,11 +1145,25 @@ def food_fitness(isings):
 
     return fitnessN, fitness
 
-def evolve(settings, I_old, gen):
+def evolve(settings, I_old, gen, type):
+    pop_size = len(I_old) # before: settings['pop_size']
+    if type == 'pred':
+        num_kill = settings['pred_numKill']
 
-    size = settings['size']
-    nSensors = settings['nSensors']
-    nMotors = settings['nMotors']
+        size = settings['pred_size']
+        nSensors = settings['pred_nSensors']
+        nMotors = settings['pred_nMotors']
+
+    elif type == 'prey':
+        num_kill = settings['prey_numKill']
+
+        size = settings['pred_size']
+        nSensors = settings['pred_nSensors']
+        nMotors = settings['pred_nMotors']
+
+    else:
+        Exception('In "evolve()" type has to be either "pred" or "prey" but is{}'.format(type))
+
     
     '''
     !!!fitness function!!!
@@ -1111,17 +1174,17 @@ def evolve(settings, I_old, gen):
         I_sorted = sorted(I_old, key=operator.attrgetter('fitness'), reverse=True)
     I_new = []
 
-    alive_num = int(settings['pop_size'] - settings['numKill'])
+    alive_num = int(pop_size - num_kill)
     elitism_num = int(alive_num/2) # only the top half of the living orgs can duplicate
 
-    numMate = int(settings['numKill'] * settings['mateDupRatio'])
-    numDup = settings['numKill'] - numMate
+    numMate = int(num_kill * settings['mateDupRatio'])
+    numDup = num_kill - numMate
 
     for i in range(0, alive_num):
         I_new.append(I_sorted[i])
 
     # --- GENERATE NEW ORGANISMS ---------------------------+
-    orgCount = settings['pop_size'] + gen * settings['numKill']
+    orgCount = pop_size + gen * num_kill
 
     # DUPLICATION OF ELITE POPULATION
     for dup in range(0, numDup):
@@ -1129,7 +1192,9 @@ def evolve(settings, I_old, gen):
         random_index = sample(candidateDup, 1)[0]
 
         name = copy.deepcopy(I_sorted[random_index].name) + 'm'
-        I_new.append(ising(settings, size, nSensors, nMotors, name))
+
+        I_new.append(ising(settings, size, nSensors, nMotors, type, name))
+
 
         #  TODO: need to seriously check if mutations are occuring uniquely
         # probably misusing deepcopy here, figure this shit out
@@ -1209,7 +1274,7 @@ def evolve(settings, I_old, gen):
 
         # TODO: include name of parents
         name = 'gen[' + str(gen) + ']-org[' + str(orgCount) + ']'
-        I_new.append(ising(settings, size, nSensors, nMotors, name))
+        I_new.append(ising(settings, size, nSensors, nMotors, type, name))
 
         I_new[-1].Beta = Beta_new
         I_new[-1].J = J_new
@@ -1237,10 +1302,11 @@ def save_settings(folder, settings):
 
 
 
-def save_sim(folder, isings, fitness_stat, mutationrate, fitC, fitm, gen):
+def save_sim(folder, pred_isings, prey_isings, fitness_stat, mutationrate, fitC, fitm, gen):
 
 
-    filenameI = folder + 'isings/gen[' + str(gen) + ']-isings.pickle'
+    filename_prey_I = folder + 'prey_isings/gen[' + str(gen) + ']-isings.pickle'
+    filename_pred_I = folder + 'pred_isings/gen[' + str(gen) + ']-isings.pickle'
     filenameS = folder + 'stats/gen[' + str(gen) + ']-stats.pickle'
 
     if type(mutationrate) is not type(None):
@@ -1250,9 +1316,13 @@ def save_sim(folder, isings, fitness_stat, mutationrate, fitC, fitm, gen):
         mutationh = None
         mutationJ = None
 
-    pickle_out = open(filenameI, 'wb')
-    pickle.dump(isings, pickle_out)
-    pickle_out.close()
+    pickle_out_pred = open(filename_pred_I, 'wb')
+    pickle.dump(pred_isings, pickle_out_pred)
+    pickle_out_pred.close()
+
+    pickle_out_prey = open(filename_prey_I, 'wb')
+    pickle.dump(prey_isings, pickle_out_prey)
+    pickle_out_prey.close()
 
 
 def sigmoid(x):
@@ -1307,30 +1377,47 @@ def seasons(settings, foods, t, T, total_timesteps):
     return foods
 
 #TODO: double check if this is working as intended!
-def interact(settings, isings, foods):
+def interact(settings, pred_isings, prey_isings):
     '''
     consider making a matrix of values instead of looping through all organisms
     currently, there is redundancy in these loops which might end up being time consuming
     '''
 
     # calculate all agent-agent and agent-food distances
-    Ipos = np.array( [[I.xpos, I.ypos] for I in isings] )
-    foodpos = np.array( [[food.xpos, food.ypos] for food in foods] )
+    I_pos_pred = np.array( [[I.xpos, I.ypos] for I in pred_isings] )
+    I_pos_prey = np.array( [[I.xpos, I.ypos] for I in prey_isings] )
+    #foodpos = np.array( [[food.xpos, food.ypos] for food in foods] )
     dimensions = np.array([settings['x_max'] - settings['x_min'], settings['y_max'] - settings['y_min']])
-    org_heading = np.array([I.r for I in isings]).reshape(len(Ipos), 1)
+    pred_heading = np.array([I.r for I in pred_isings]).reshape(len(I_pos_pred), 1)
+    prey_heading = np.array([I.r for I in prey_isings]).reshape(len(I_pos_prey), 1)
 
-    dist_mat_org, theta_mat_org = pdistance_pairwise(Ipos, Ipos, dimensions, food=False)
-    dist_mat_food, theta_mat_food = pdistance_pairwise(Ipos, foodpos, dimensions, food=True)
+    # TODO: Distances between organisms are not even used (only for org sensor)! Leave that away to speed up code?
+    dist_mat_pred_pred, theta_mat_pred_pred = pdistance_pairwise(I_pos_pred, I_pos_pred, dimensions, food=False)
+    dist_mat_pred_prey, theta_mat_pred_prey = pdistance_pairwise(I_pos_pred, I_pos_prey, dimensions, food=True)
+    # TODO: This is redundant! Find a better solution!
+    # dist_mat_prey_pred = dist_mat_prey_pred.T
+    # theta_mat_prey_pred = theta_mat_pred_prey.apply(change_angles)
+    # def change_angles(a):
+    #     if a > 0:
+    #         return 180-a
+    #     else:
+    #         return 180+a
+    dist_mat_prey_pred, theta_mat_prey_pred = pdistance_pairwise(I_pos_prey, I_pos_pred, dimensions, food=True)
+    # TODO: In future add prey-prey for group behaviour?
 
     # calculate agent-agent and agent-food angles
-    theta_mat_org = theta_mat_org - org_heading
-    theta_mat_food = theta_mat_food - org_heading
+    theta_mat_pred_pred = theta_mat_pred_pred - pred_heading
+    theta_mat_pred_prey = theta_mat_pred_prey - pred_heading
+    theta_mat_prey_pred = theta_mat_prey_pred - prey_heading
 
-    theta_mat_org = np.mod(theta_mat_org, 360)
-    theta_mat_org = np.where(theta_mat_org > 180, theta_mat_org - 360, theta_mat_org)
+    theta_mat_pred_pred = np.mod(theta_mat_pred_pred, 360)
+    theta_mat_pred_pred = np.where(theta_mat_pred_pred > 180, theta_mat_pred_pred - 360, theta_mat_pred_pred)
 
-    theta_mat_food = np.mod(theta_mat_food, 360)
-    theta_mat_food = np.where(theta_mat_food > 180, theta_mat_food - 360, theta_mat_food)
+    theta_mat_pred_prey = np.mod(theta_mat_pred_prey, 360)
+    theta_mat_pred_prey = np.where(theta_mat_pred_prey > 180, theta_mat_pred_prey - 360, theta_mat_pred_prey)
+
+    theta_mat_prey_pred = np.mod(theta_mat_prey_pred, 360)
+    theta_mat_prey_pred = np.where(theta_mat_prey_pred > 180, theta_mat_prey_pred - 360, theta_mat_prey_pred)
 
     # calculate org sensor
 
@@ -1341,24 +1428,24 @@ def interact(settings, isings, foods):
     # org_sensor = np.sum(org_sensor, axis=1)
 
 
-    for i, I in enumerate(isings):
+    for i, I in enumerate(pred_isings):
         if settings['energy_model']:
             I.energies.append(I.energy)
 
-        minFoodDist = np.min(dist_mat_food[i, :])
-        foodInd = np.argmin(dist_mat_food[i, :])
+        min_prey_dist = np.min(dist_mat_pred_prey[i, :])
+        prey_ind = np.argmin(dist_mat_pred_prey[i, :])
 
-        I.d_food = minFoodDist  # Distance to closest food
-        I.r_food = theta_mat_food[i, foodInd] # "angle" to closest food
+        I.d_food = min_prey_dist  # Distance to closest food
+        I.r_food = theta_mat_pred_prey[i, prey_ind] # "angle" to closest food
 
-        if minFoodDist <= settings['org_radius']:
+        if min_prey_dist <= settings['org_radius']:
             if settings['energy_model']:
-                I.energy += foods[foodInd].energy
-            I.food += foods[foodInd].energy
+                I.energy += prey_isings[prey_ind].energy
+            I.food += prey_isings[prey_ind].eat_energy
             '''
             finess is proportional to energy
             '''
-            foods[foodInd].respawn(settings)
+            prey_isings[prey_ind].respawn(settings)
 
         #I.org_sens = org_sensor[i]
 

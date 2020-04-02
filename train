@@ -21,11 +21,12 @@ def create_settings():
     settings = {}
     
     # ENVIRONMENT SETTINGS
-    settings['pop_size'] = args.pop_size #50  # number of organisms #150
-    settings['numKill'] = int(settings['pop_size'] / 1.66)
-    settings['food_num'] = args.food_num #100  # number of food particles
+    settings['pop_size_pred'] = args.pop_size_pred #50  # number of organisms #150
+    settings['pred_numKill'] = int(settings['pop_size_pred'] / 1.66)
+    settings['pop_size_prey'] = args.pop_size_prey #50  # number of organisms #150
+    settings['prey_numKill'] = int(settings['pop_size_prey'] / 1.66)
     settings['food_radius'] = 0.03
-    settings['food_energy'] = args.food_energy
+    settings['predator_eat_energy'] = args.food_energy
     settings['org_radius'] = 0.05
     settings['ANN'] = False  # Use ANN or Ising?
     settings['BoidOn'] = False  # Only use Boid model? #True
@@ -64,12 +65,19 @@ def create_settings():
     settings['frameRate'] = 1
     settings['animation_fps'] = args.fps
     
-    settings['size'] = 12 #Total number of neurons in NN
-    settings['nSensors'] = 4
-    settings['nMotors'] = 4
+    settings['pred_size'] = 12 #Total number of neurons in NN
+    settings['pred_nSensors'] = 4
+    settings['pred_nMotors'] = 4
+
+    settings['prey_size'] = 12 #Total number of neurons in NN
+    settings['prey_nSensors'] = 4
+    settings['prey_nMotors'] = 4
+
+
+
     settings['learningrate'] = 0.01  # 0.01
     # how many hidden neurons are not connected to each other
-    settings['numDisconnectedNeurons'] = 0 #  int((settings['size'] - settings['nSensors'] - settings['nMotors']) / 1.2)
+    settings['numDisconnectedNeurons'] = 0 #  int((settings['size'] - settings['pred_nSensors'] - settings['pred_nMotors']) / 1.2)
     # how should organisms repopulate, duplicate or mate?
     settings['mateDupRatio'] = 0.5
     settings['mutationRateDup'] = 0.1  # DUPLICATION mutation rate
@@ -132,10 +140,10 @@ def parse():
                         years_per_iteration=1, min_food_winter=0.1, thermal_time=3, diff_init_betas=None, acc_motor=True,
                         a_max=0.05
                                      ''')
-    parser.add_argument('-p', '--pop', dest='pop_size', type=int, help='Number of individuals in each generation')
-    parser.add_argument('-f','--food', dest='food_num', type=int,
-                        help='''Number of food particles. Serves as largest number of food particles when seasons are 
-                        activated''')
+    parser.add_argument('-pd', '--pop_pred', dest='pop_size_pred', type=int,
+                        help='Number of predator individuals in each generation')
+    parser.add_argument('-py', '--pop_prey', dest='pop_size_prey', type=int,
+                        help='Number of prey individuals in each generation')
     parser.add_argument('-s', '--save', dest='save_data', action='store_false', help="Don't save data of simulation")
     parser.add_argument('-noplt', '--noplot', dest='plot_pipeline', action='store_false',
                         help='Run Plotting pipeline at end of simulation')
@@ -172,7 +180,7 @@ def parse():
                         help='FLOAT [0,1] energy cost of speed as a factor of speed (linear function)')
     parser.add_argument('-ie', '--init_en', dest='init_energy', type=float,
                         help='initial energy at beginning of each generation in energy model')
-    parser.add_argument('-fe', '--food_energy', type=float, dest ='food_energy',
+    parser.add_argument('-pe', '--predator_eat_energy', type=float, dest ='food_energy',
                         help='Amount of energy, that individual gets from eating food particle')
     parser.add_argument('-ne', '--no_energy', dest='no_ener_mod', action='store_true',
                         help='Switch off energy model and instead optimize for maximal number of foods eaten')
@@ -182,8 +190,7 @@ def parse():
                         energy model is switched on''')
     parser.add_argument('-ama', '--a_max', dest='a_max', type=float, help='Maximal acceleration of an agent')
     parser.add_argument('-cfg', '--chg_food_gen', dest='chg_food_gen', nargs='+', type=int,
-                        help='''Expects a blank separated list of len 2 X Y. At generation X change num_food to Y
-                        num_food: maximal number of food when seasons active''')
+                        help='''Expects a blank separated list of len 2 X Y. At generation X change pop_size_prey to Y''')
     parser.add_argument('-tt', '--thermal', dest='thermal_time', type=int,
                         help='Number of thermal steps in each ising network')
     parser.add_argument('-n', '--name', dest='savename', help='Optional name for the folder')
@@ -195,7 +202,7 @@ def parse():
     #-n does not do anything in the code as input arguments already define name of folder. Practical nonetheless.
 
     parser.set_defaults(save_data=True, plot=False, iterations=2000, time_steps=2000, plot_gens=[], fps=20,
-                        loadfile='', loaditer = 1999, pop_size=50, food_num=100, init_beta=1.0, seasons=False,
+                        loadfile='', loaditer = 1999, pop_size_pred=50, pop_size_prey=100, init_beta=1.0, seasons=False,
                         server_mode = False, cost_speed=0.05, v_max=999.0, v_min=0.05, sig_beta=0.02, no_mut_beta=False,
                         init_energy=2, food_energy=1, no_ener_mod=False, plot_pipeline=True, chg_food_gen=None,
                         years_per_iteration=1, min_food_winter=0.1, thermal_time=10, diff_init_betas=None, acc_motor=True,
@@ -212,28 +219,26 @@ def run(settings):
 
 
 
-    size = settings['size']
-    nSensors = settings['nSensors']
-    nMotors = settings['nMotors']
+    pred_size = settings['pred_size']
+    pred_nSensors = settings['pred_nSensors']
+    pred_nMotors = settings['pred_nMotors']
+
+    prey_size = settings['prey_size']
+    prey_nSensors = settings['prey_nSensors']
+    prey_nMotors = settings['prey_nMotors']
     # LOAD ISING CORRELATIONS
     # filename = 'correlations-ising2D-size400.npy'
     filename2 = 'correlations-ising-generalized-size83.npy'
     settings['Cdist'] = np.load(filename2)
 
-    # --- POPULATE THE ENVIRONMENT WITH FOOD ---------------+
-    foods = []
-    for i in range(0, settings['food_num']):
-        foods.append(food(settings))
-
-    # Food is only created uniformly distributed at the very beginning.
-    # For a new iteration the placement of the food is kept.
 
 
     # --- POPULATE THE ENVIRONMENT WITH ORGANISMS ----------+
     if settings['LoadIsings']:
-        loadfile = 'save/' + settings['loadfile'] + '/isings/gen[' + str(settings['iter']) + ']-isings.pickle'
+        pred_loadfile = 'save/' + settings['loadfile'] + '/pred_isings/gen[' + str(settings['iter']) + ']-isings.pickle'
+        prey_loadfile = 'save/' + settings['loadfile'] + '/prey_isings/gen[' + str(settings['iter']) + ']-isings.pickle'
 
-        startstr = 'Loading simulation:' + loadfile + ' (' + str(settings['TimeSteps']) + \
+        startstr = 'Loading simulation:' + pred_loadfile + ' (' + str(settings['TimeSteps']) + \
                    ' timesteps) x (' + str(Iterations) + ' iterations)'
 
         prev_settings = load_settings(settings['loadfile'])
@@ -241,15 +246,21 @@ def run(settings):
         #pop size of current simulation is taken from loaded simulation
         settings['pop_size'] = prev_settings['pop_size']
         print(startstr)
-        isings = pickle.load(open(loadfile, 'rb'))
+        pred_isings = pickle.load(open(pred_loadfile, 'rb'))
+        prey_isings = pickle.load(open(prey_loadfile, 'rb'))
 
     else:
         startstr = 'Starting simulation: (' + str(settings['TimeSteps']) + \
                    ' timesteps) x (' + str(Iterations) + ' iterations)'
         print(startstr)
-        isings = []
-        for i in range(0, settings['pop_size']):
-            isings.append(ising(settings, size, nSensors, nMotors, name='gen[0]-org[' + str(i) + ']'))
+        pred_isings = []
+        for i in range(0, settings['pop_size_pred']):
+            pred_isings.append(ising(settings, pred_size, pred_nSensors, pred_nMotors, type='pred', name='gen[0]-org[' + str(i) + ']'))
+
+        prey_isings = []
+        for i in range(0, settings['pop_size_prey']):
+            prey_isings.append(ising(settings, prey_size, prey_nSensors, prey_nMotors, type='prey', name='gen[0]-org[' + str(i) + ']'))
+
         
 
     # --- CYCLE THROUGH EACH GENERATION --------------------+
@@ -261,7 +272,7 @@ def run(settings):
     #No critical learning:
     # CriticalLearning(isings, foods, settings, Iterations)
 
-    sim_name = EvolutionLearning(isings, foods, settings, Iterations)
+    sim_name = EvolutionLearning(pred_isings, prey_isings, settings, Iterations)
 
     return sim_name
 
