@@ -261,15 +261,19 @@ class ising:
             self.r = settings['r_max']
 
         if settings['energy_model']:
+            if self.type == 'pred':
+                # TODO: Check if discreteness in avg_velocity median can be fixed by making orgs pay for going below v_min, that could afford it
+                if self.energy >= (self.v * settings['cost_speed']) and self.v > settings['v_min']:
+                    #if agend has enough energy and wants to go faster than min speed
+                    self.energy -= self.v * settings['cost_speed']
+                elif self.v > settings['v_min']:
+                    #if agned wants to go faster than min speed but does not have energy
+                    self.v = settings['v_min']
+                self.all_velocity += self.v
 
-
-            if self.energy >= (self.v * settings['cost_speed']) and self.v > settings['v_min']:
-                #if agend has enough energy and wants to go faster than min speed
+            elif self.type == 'prey':
+                # Prey has negative energy
                 self.energy -= self.v * settings['cost_speed']
-            elif self.v > settings['v_min']:
-                #if agned wants to go faster than min speed but does not have energy
-                self.v = settings['v_min']
-            self.all_velocity += self.v
 
         # print('Velocity: ' + str(self.v) +  str(self.s[-1]))
 
