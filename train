@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from embodied_ising import ising
-from embodied_ising import food
 from embodied_ising import EvolutionLearning
 import numpy as np
 import argparse
@@ -107,7 +106,8 @@ def create_settings():
     settings['energy_model'] = not args.no_ener_mod #BOO
     settings['v_min'] = args.v_min  # FLOAT [0,1)
     settings['cost_speed'] = args.cost_speed  # FLOAT [0,1] energy cost of speed as a factor of speed #default 0.05
-    settings['initial_energy'] = args.init_energy  # Energy that each organism starts with in each simulation
+    settings['initial_energy'] = args.init_energy  # Energy that each predator starts with in each simulation
+
 
     settings['plot_pipeline'] = args.plot_pipeline
     settings['refresh_plot'] = args.refresh_plot

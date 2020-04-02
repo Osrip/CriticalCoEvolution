@@ -581,7 +581,11 @@ class ising:
 
         if settings['energy_model']:
             self.energies = []  # Clear .energies, that .avg_energy is calculated from with each iteration
-            self.energy = settings['initial_energy']  # Setting initial energy
+
+            if self.type == 'pred':
+                self.energy = settings['initial_energy']  # Setting initial energy
+            elif self.type == 'prey':
+                self.energy = 0 #Prey has init_energy of 0
 
             self.avg_energy = 0
             self.all_velocity = 0
@@ -658,16 +662,16 @@ def SequentialGlauberStepFast(thermalTime, s, h, J, Beta, Ssize, size):
 
 
 
-class food():
-    def __init__(self, settings):
-        self.xpos = uniform(settings['x_min'], settings['x_max'])
-        self.ypos = uniform(settings['y_min'], settings['y_max'])
-        self.energy = settings['food_energy']
-
-    def respawn(self, settings):
-        self.xpos = uniform(settings['x_min'], settings['x_max'])
-        self.ypos = uniform(settings['y_min'], settings['y_max'])
-        self.energy = settings['food_energy']
+# class food():
+#     def __init__(self, settings):
+#         self.xpos = uniform(settings['x_min'], settings['x_max'])
+#         self.ypos = uniform(settings['y_min'], settings['y_max'])
+#         self.energy = settings['food_energy']
+#
+#     def respawn(self, settings):
+#         self.xpos = uniform(settings['x_min'], settings['x_max'])
+#         self.ypos = uniform(settings['y_min'], settings['y_max'])
+#         self.energy = settings['food_energy']
 
 # ------------------------------------------------------------------------------+
 # ------------------------------------------------------------------------------+
@@ -840,6 +844,8 @@ def TimeEvolve(pred_isings, prey_isings, settings, folder, rep, total_timesteps 
 
         # print('\r', 'Iteration {0} of {1}'.format(t, T), end='') #, end='\r'
         # print('\r', 'Tstep {0}/{1}'.format(t, T), end='')  # , end='\r'
+
+
         if not (settings['chg_food_gen'] is None):
             if t == settings['chg_food_gen'][0]:
                 settings['pop_size_prey'] = settings['chg_food_gen'][1]
@@ -854,26 +860,17 @@ def TimeEvolve(pred_isings, prey_isings, settings, folder, rep, total_timesteps 
             pred_isings_all_timesteps.append(pred_isings_info)
             prey_isings_all_timesteps.append(prey_isings_info)
 
+
         interact(settings, pred_isings, prey_isings)
 
-            
-        
-        if settings['BoidOn']:
-            boid_update(isings, settings)
-            for I in isings:
-                I.position[:, t] = [I.xpos, I.ypos]
+        # parallelization here
+        if settings['ANN']:
+            I.ANNUpdate(settings)
         else:
-
-            #parallelization here
-
-            if settings['ANN']:
-                I.ANNUpdate(settings)
-
+            if settings['parallel_computing']:
+                parallelizedSequGlauberSteps(isings, settings)
             else:
-                if settings['parallel_computing']:
-                    parallelizedSequGlauberSteps(isings, settings)
-                else:
-                    [I.SequentialGlauberStepFastHelper(settings) for I in isings]
+                [I.SequentialGlauberStepFastHelper(settings) for I in isings]
 
             
             
@@ -1442,10 +1439,10 @@ def interact(settings, pred_isings, prey_isings):
             if settings['energy_model']:
                 I.energy += prey_isings[prey_ind].energy
             I.food += prey_isings[prey_ind].eat_energy
-            '''
-            finess is proportional to energy
-            '''
             prey_isings[prey_ind].respawn(settings)
+
+            #The prey loses energy each time it is eaten. Negative energy possible (check that!)
+            prey_isings[prey_ind].energy = prey_isings[prey_ind].energy - 1
 
         #I.org_sens = org_sensor[i]
 
