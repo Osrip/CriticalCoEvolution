@@ -1565,6 +1565,7 @@ def interact(settings, isings, foods):
 
 
 
+#  This seems not be used anywhere...
 def update_ising(settings, I, t):
     I.SequentialUpdate(settings)
     I.position[:, t] = [I.xpos, I.ypos]

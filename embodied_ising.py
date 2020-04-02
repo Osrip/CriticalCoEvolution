@@ -55,9 +55,11 @@ class ising:
 
         if type == 'pred':
             self.prey_num_env = settings['pop_size_prey']
+            self.radius = settings['pred_radius']
 
         elif type == 'prey':
             self.eat_energy = settings['prey_eat_energy']
+            self.radius = settings['prey_radius']
         else:
             raise Exception('No type defined (either "pred" or "prey")')
 
@@ -69,7 +71,7 @@ class ising:
         self.size = netsize
         self.Ssize = Nsensors  # Number of sensors
         self.Msize = Nmotors  # Number of sensors
-        self.radius = settings['org_radius']
+
 
         self.h = np.zeros(netsize) # TODO: is this bias, does this ever go over [0 0 0 0 0]???????
 
@@ -863,14 +865,18 @@ def TimeEvolve(pred_isings, prey_isings, settings, folder, rep, total_timesteps 
 
         interact(settings, pred_isings, prey_isings)
 
-        # parallelization here
-        if settings['ANN']:
-            I.ANNUpdate(settings)
-        else:
-            if settings['parallel_computing']:
-                parallelizedSequGlauberSteps(isings, settings)
+
+        #  Update noth predator and prey
+
+        for isings in (pred_isings, prey_isings):
+            # parallelization here
+            if settings['ANN']:
+                I.ANNUpdate(settings)
             else:
-                [I.SequentialGlauberStepFastHelper(settings) for I in isings]
+                if settings['parallel_computing']:
+                    parallelizedSequGlauberSteps(isings, settings)
+                else:
+                    [I.SequentialGlauberStepFastHelper(settings) for I in isings]
 
             
             
@@ -1435,7 +1441,7 @@ def interact(settings, pred_isings, prey_isings):
         I.d_food = min_prey_dist  # Distance to closest food
         I.r_food = theta_mat_pred_prey[i, prey_ind] # "angle" to closest food
 
-        if min_prey_dist <= settings['org_radius']:
+        if min_prey_dist <= settings['pred_radius']:
             if settings['energy_model']:
                 I.energy += prey_isings[prey_ind].energy
             I.food += prey_isings[prey_ind].eat_energy

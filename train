@@ -24,9 +24,10 @@ def create_settings():
     settings['pred_numKill'] = int(settings['pop_size_pred'] / 1.66)
     settings['pop_size_prey'] = args.pop_size_prey #50  # number of organisms #150
     settings['prey_numKill'] = int(settings['pop_size_prey'] / 1.66)
-    settings['food_radius'] = 0.03
+
     settings['prey_eat_energy'] = args.food_energy
-    settings['org_radius'] = 0.05
+    settings['pred_radius'] = 0.05
+    settings['prey_radius'] = 0.03
     settings['ANN'] = False  # Use ANN or Ising?
     settings['BoidOn'] = False  # Only use Boid model? #True
 

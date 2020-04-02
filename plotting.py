@@ -19,7 +19,7 @@ from matplotlib import colors
 
 
 
-def animate_plot_Func(isings_all_timesteps, foods_all_timesteps, settings, ax, fig, rep, t, save_folder):
+def animate_plot_Func(pred_isings_all_timesteps, prey_isings_all_timesteps, settings, ax, fig, rep, t, save_folder):
     ''' Uses FuncAnimation - works and currently implemented'''
     my_path = os.path.abspath(__file__)
     #mpl.rcParams["savefig.directory"] = my_path + 'tmp/'
@@ -44,9 +44,12 @@ def animate_plot_Func(isings_all_timesteps, foods_all_timesteps, settings, ax, f
 
     os.chdir(path)
     design_figure(settings, fig, ax)
-    initial_plot(isings_all_timesteps[0], foods_all_timesteps[0], settings, ax)
+    initial_plot(pred_isings_all_timesteps[0], prey_isings_all_timesteps[0], settings, ax)
     #plt.savefig('firstframe.png', dpi =100, bbox_inches = 'tight')
-    ani = animation.FuncAnimation(fig, __update_plot, fargs=[isings_all_timesteps, foods_all_timesteps, settings, ax, fig], interval=1, frames=len(isings_all_timesteps))
+    if not (len(pred_isings_all_timesteps) == len(prey_isings_all_timesteps)):
+        raise Exception('Length of "pred_isings_all_timesteps" not equal to "prey_isings_all_timesteps"')
+
+    ani = animation.FuncAnimation(fig, __update_plot, fargs=[pred_isings_all_timesteps, prey_isings_all_timesteps, settings, ax, fig], interval=1, frames=len(pred_isings_all_timesteps))
 
     if True:
         #ffmpeg does not work on server, therefore default writer used
@@ -88,14 +91,15 @@ def animate_plot(all_artists, settings, ax, fig):
     print('Animation successfully saved at {}'.format(savepath))
 
 
-def __update_plot(t, isings_all_timesteps, foods_all_timesteps, settings, ax, fig):
+def __update_plot(t, pred_isings_all_timesteps, prey_isings_all_timesteps, settings, ax, fig):
     #[a.remove for a in reversed(ax.artists)]
 
-    isings = isings_all_timesteps[t]
-    foods = foods_all_timesteps[t]
+    pred_isings = pred_isings_all_timesteps[t]
+    prey_isings = prey_isings_all_timesteps[t]
+
     ax.cla()
     design_figure(settings, fig, ax)
-    initial_plot(isings, foods, settings, ax)
+    initial_plot(pred_isings, prey_isings, settings, ax)
 
     return ax.artists
 
@@ -183,15 +187,18 @@ def plot_frame(settings, folder, fig, ax, isings, foods, time, rep):
 
 
 
-def initial_plot(isings, foods, settings, ax):
-    for I in isings:
-        __plot_organism_init(settings, I[0], I[1], I[2], I[3], ax)
+def initial_plot(pred_isings, prey_isings, settings, ax):
+    for I in pred_isings:
+        __plot_organism_init(settings, I[0], I[1], I[2], I[3], ax, 'pred')
+
+    for I in prey_isings:
+        __plot_organism_init(settings, I[0], I[1], I[2], I[3], ax, 'prey')
 
     # PLOT FOOD PARTICLES
-    for food in foods:
-        __plot_food_init(settings, food[0], food[1], ax)
+    # for food in foods:
+    #     __plot_food_init(settings, food[0], food[1], ax)
 
-def __plot_organism_init(settings, x1, y1, theta, energy, ax):
+def __plot_organism_init(settings, x1, y1, theta, energy, ax, type):
     if energy < 0.5:
        energy = 0.5
 
@@ -201,22 +208,28 @@ def __plot_organism_init(settings, x1, y1, theta, energy, ax):
     #color1 = 'black'
     #color2 = cmap(norm(-(energy+1)))
     #org_size = settings['org_radius']
-    if settings['energy_model']:
-        org_size = settings['org_radius'] * (np.log(energy+1))
-    else:
-        org_size = settings['org_radius'] * (np.log(energy + 1))
+    # if settings['energy_model']:
+    #     org_size = settings['org_radius'] * (np.log(energy+1))
+    # else:
+    if type == 'pred':
+        org_radius = settings['pred_radius']
+    elif type == 'prey':
+        org_radius = settings['prey_radius']
+
+
+    org_size_energy = org_radius * (np.log(energy + 1))
         #  If energy model is not active the "extract_plot_information function in embodied ising defines fitness thus#  foods eaten as energy
 
 
-    circle = Circle([x1,y1], settings['org_radius'], edgecolor = 'g', facecolor = 'lightgreen', zorder=8)
+    circle = Circle([x1,y1], org_radius, edgecolor = 'g', facecolor = 'lightgreen', zorder=8)
     #circle = Circle([x1,y1], org_size, edgecolor = color1, facecolor = color1, zorder=8)
     ax.add_artist(circle)
 
-    edge = Circle([x1,y1], settings['org_radius'], facecolor='None', edgecolor = 'darkgreen', zorder=8)
+    edge = Circle([x1,y1], org_radius, facecolor='None', edgecolor = 'darkgreen', zorder=8)
     #edge = Circle([x1, y1], org_size, facecolor='None', edgecolor=color2, zorder=8)
     ax.add_artist(edge)
 
-    tail_len = org_size*1.25
+    tail_len = org_size_energy*1.25
     
     x2 = cos(radians(theta)) * tail_len + x1
     y2 = sin(radians(theta)) * tail_len + y1
