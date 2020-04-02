@@ -214,21 +214,26 @@ def __plot_organism_init(settings, x1, y1, theta, energy, ax, type):
     if type == 'pred':
         org_radius = settings['pred_radius']
 
-        circle_edge_color = 'red'
-        circle_face_color = 'firebrick'
-        edge_edge_color = 'maroon'
-        tail_color = 'g'
-
-    elif type == 'prey':
-        org_radius = settings['prey_radius']
-
         circle_edge_color = 'g'
         circle_face_color = 'lightgreen'
         edge_edge_color = 'darkgreen'
         tail_color = 'red'
 
+        org_size_energy = org_radius * (np.log(energy + 1))
 
-    org_size_energy = org_radius * (np.log(energy + 1))
+    elif type == 'prey':
+        org_radius = settings['prey_radius']
+
+        circle_edge_color = 'red'
+        circle_face_color = 'lightcoral'
+        edge_edge_color = 'darkred'
+        tail_color = 'g'
+
+        org_size_energy = org_radius * (np.log(np.absolute(energy) + 1))
+
+
+
+
         #  If energy model is not active the "extract_plot_information function in embodied ising defines fitness thus#  foods eaten as energy
 
 
