@@ -57,7 +57,7 @@ class ising:
             self.prey_num_env = settings['pop_size_prey']
 
         elif type == 'prey':
-            self.eat_energy = settings['predator_eat_energy']
+            self.eat_energy = settings['prey_eat_energy']
         else:
             raise Exception('No type defined (either "pred" or "prey")')
 
@@ -596,7 +596,7 @@ class ising:
         if self.type == 'prey':
             self.xpos = uniform(settings['x_min'], settings['x_max'])
             self.ypos = uniform(settings['y_min'], settings['y_max'])
-            self.eat_energy = settings['predator_eat_energy']
+            self.eat_energy = settings['prey_eat_energy']
         else:
             raise Exception('You are trying to respawn a predator, which is not possible')
 

@@ -25,7 +25,7 @@ def create_settings():
     settings['pop_size_prey'] = args.pop_size_prey #50  # number of organisms #150
     settings['prey_numKill'] = int(settings['pop_size_prey'] / 1.66)
     settings['food_radius'] = 0.03
-    settings['predator_eat_energy'] = args.food_energy
+    settings['prey_eat_energy'] = args.food_energy
     settings['org_radius'] = 0.05
     settings['ANN'] = False  # Use ANN or Ising?
     settings['BoidOn'] = False  # Only use Boid model? #True
@@ -180,7 +180,7 @@ def parse():
                         help='FLOAT [0,1] energy cost of speed as a factor of speed (linear function)')
     parser.add_argument('-ie', '--init_en', dest='init_energy', type=float,
                         help='initial energy at beginning of each generation in energy model')
-    parser.add_argument('-pe', '--predator_eat_energy', type=float, dest ='food_energy',
+    parser.add_argument('-pe', '--prey_eat_energy', type=float, dest ='food_energy',
                         help='Amount of energy, that individual gets from eating food particle')
     parser.add_argument('-ne', '--no_energy', dest='no_ener_mod', action='store_true',
                         help='Switch off energy model and instead optimize for maximal number of foods eaten')
