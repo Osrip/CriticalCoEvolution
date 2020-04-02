@@ -27,7 +27,7 @@ def create_settings():
 
     settings['prey_eat_energy'] = args.food_energy
     settings['pred_radius'] = 0.05
-    settings['prey_radius'] = 0.03
+    settings['prey_radius'] = 0.045   #  Predator radius has to go through midt point of prey, so prey radius does not effect simulation - only visual change
     settings['ANN'] = False  # Use ANN or Ising?
     settings['BoidOn'] = False  # Only use Boid model? #True
 
