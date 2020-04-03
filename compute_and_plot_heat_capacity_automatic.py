@@ -8,7 +8,7 @@ def main(sim_name, settings, i_type):
     gen_nums = detect_all_isings(sim_name, i_type)
     generations = [0, gen_nums[-1]]
     cores = 5
-    compute_plot_heat_capacity(sim_name, generations, cores, settings)
+    compute_plot_heat_capacity(sim_name, generations, cores, settings, i_type)
 
 def compute_plot_heat_capacity(sim_name, generation_list, cores, settings, i_type):
     gens_str = list_to_blank_seperated_str(generation_list)
