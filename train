@@ -108,6 +108,10 @@ def create_settings():
     settings['v_min'] = args.v_min  # FLOAT [0,1)
     settings['cost_speed'] = args.cost_speed  # FLOAT [0,1] energy cost of speed as a factor of speed #default 0.05
     settings['initial_energy'] = args.init_energy  # Energy that each predator starts with in each simulation
+    settings['energy_charge_prey'] = 0.0025
+    # Energy each prey gets every  cost_speed * avg_speed = energy_charge_prey that is required to go avg_speed
+
+    # with settings['energy_charge_prey'] = 0.0025 avg_speed 0f 0.05 should be possible
 
 
     settings['plot_pipeline'] = args.plot_pipeline

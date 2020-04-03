@@ -17,9 +17,10 @@ if len(argv) < 3:
     # iterNum = 0
 
 loadfile = str(argv[1]) #
+i_type = str(argv[2]) # isings type
+bind = int(argv[3]) #beta index
+iterNum = int(argv[4]) #Generation numbers
 
-bind = int(argv[2]) #beta index
-iterNum = int(argv[3]) #Generation numbers
 
 
 R = 1 # Number of Repetitions
@@ -28,7 +29,10 @@ mode = 'MonteCarlo'
 #Is there a bug here? Nbetas = 101 originally Nbetas = 102 solves index error?
 Nbetas = 102
 betas = 10 ** np.linspace(-1, 1, Nbetas)
-loadstr = 'save/' + loadfile +  '/isings/gen[' + str(iterNum) + ']-isings.pickle'
+if i_type == 'pred':
+    loadstr = 'save/' + loadfile + '/pred_isings/gen[' + str(iterNum) + ']-isings.pickle'
+elif i_type == 'prey':
+    loadstr = 'save/' + loadfile + '/prey_isings/gen[' + str(iterNum) + ']-isings.pickle'
 
 # print(iterNum)
 
@@ -70,7 +74,11 @@ for rep in range(R):
         agentNum += 1
 
 # print(np.mean(C, 0))
-folder = 'save/' + loadfile + '/C' + '/C_' + str(iterNum) + '/'
+if i_type == 'pred':
+    folder = 'save/' + loadfile + '/C_pred' + '/C_' + str(iterNum) + '/'
+elif i_type == 'prey':
+    folder = 'save/' + loadfile + '/C_prey' + '/C_' + str(iterNum) + '/'
+
 file = 'C-size_' + str(size) + '-Nbetas_' + \
        str(Nbetas) + '-bind_' + str(bind) + '.npy'
 filename = folder + file

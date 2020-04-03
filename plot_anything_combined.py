@@ -20,7 +20,7 @@ loadfiles = ['beta_experiment/beta-0-1/sim-20180512-105719',
              'beta_experiment/beta-1/sim-20180511-163319',
              'beta_experiment/beta-10/sim-20180512-105824']
 '''
-def main(loadfiles, plot_var, isings_lists = None, autoLoad = True,
+def main(loadfiles, plot_var, i_type, isings_lists = None, autoLoad = True,
          sim_labels = [r'$\beta_i = 0.1$', r'$\beta_i = 1$', r'$\beta_i = 10$'], scatter = True):
 
     '''
@@ -59,9 +59,13 @@ def main(loadfiles, plot_var, isings_lists = None, autoLoad = True,
     ###########################
     FOODS = []
     for loadfile, isings_list in zip(loadfiles, isings_lists):
-        iter_list = detect_all_isings(loadfile)  # iter_list = np.arange(0, 2000, 1)
+        iter_list = detect_all_isings(loadfile, i_type)  # iter_list = np.arange(0, 2000, 1)
         settings = load_settings(loadfile)
-        numAgents = settings['pop_size']
+        if i_type == 'pred':
+            numAgents = settings['pop_size_pred']
+        elif i_type == 'prey':
+            numAgents = settings['pop_size_prey']
+
         f = fitness(loadfile, iter_list, isings_list, numAgents, autoLoad, saveFigBool, plot_var)
         # FIX THE DOUBLE COUNTING PROBLEM
         if f.shape[0] > 2000 and fixGen2000:
@@ -121,7 +125,11 @@ def main(loadfiles, plot_var, isings_lists = None, autoLoad = True,
         savefolder += '/'
     else:
         folder = 'save/' + loadfile
-        savefolder = folder + '/figs/' + plot_var + '_line/'
+
+        if i_type == 'pred':
+            savefolder = folder + '/figs_pred/' + plot_var + '_line/'
+        elif i_type == 'prey':
+            savefolder = folder + '/figs_prey/' + plot_var + '_line/'
 
 
     savefilename = savefolder + plot_var + '_gen' + str(iter_list[0]) + '-' + str(iter_list[-1]) + '.png'

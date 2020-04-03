@@ -60,6 +60,7 @@ class ising:
         elif type == 'prey':
             self.eat_energy = settings['prey_eat_energy']
             self.radius = settings['prey_radius']
+            self.times_killed = 0
         else:
             raise Exception('No type defined (either "pred" or "prey")')
 
@@ -273,7 +274,11 @@ class ising:
 
             elif self.type == 'prey':
                 # Prey has negative energy
-                self.energy -= self.v * settings['cost_speed']
+                if self.energy >= self.v * settings['cost_speed']:
+                    self.energy -= self.v * settings['cost_speed']
+                else:
+                    # Prey just stops when it runs out of energy
+                    self.v = 0
 
         # print('Velocity: ' + str(self.v) +  str(self.s[-1]))
 
@@ -866,8 +871,10 @@ def TimeEvolve(pred_isings, prey_isings, settings, folder, rep, total_timesteps 
             pred_isings_all_timesteps.append(pred_isings_info)
             prey_isings_all_timesteps.append(prey_isings_info)
 
-
         interact(settings, pred_isings, prey_isings)
+
+        for Iy in prey_isings:
+            Iy.energy = Iy.energy + settings['energy_charge_prey']
 
 
         #  Update noth predator and prey
@@ -983,6 +990,8 @@ def EvolutionLearning(pred_isings, prey_isings, settings, Iterations = 1):
             os.makedirs(folder + 'prey_isings')
             os.makedirs(folder + 'stats')
             os.makedirs(folder + 'figs')
+            os.makedirs(folder + 'figs_pred')
+            os.makedirs(folder + 'figs_prey')
             os.makedirs(folder + 'code')
 
             #save settings dicitionary
@@ -1176,7 +1185,11 @@ def evolve(settings, I_old, gen, type):
     !!!fitness function!!!
     '''
     if settings['energy_model']:
-        I_sorted = sorted(I_old, key=operator.attrgetter('avg_energy'), reverse=True)
+        if type == 'pred':
+            I_sorted = sorted(I_old, key=operator.attrgetter('avg_energy'), reverse=True)
+        elif type == 'prey':
+            # Prey selected according to times it was eaten
+            I_sorted = sorted(I_old, key=operator.attrgetter('times_killed'), reverse=False)
     else:
         I_sorted = sorted(I_old, key=operator.attrgetter('fitness'), reverse=True)
     I_new = []
@@ -1452,7 +1465,8 @@ def interact(settings, pred_isings, prey_isings):
             prey_isings[prey_ind].respawn(settings)
 
             #The prey loses energy each time it is eaten. Negative energy possible (check that!)
-            prey_isings[prey_ind].energy = prey_isings[prey_ind].energy - 1
+            #prey_isings[prey_ind].energy = prey_isings[prey_ind].energy - 1
+            prey_isings[prey_ind].times_killed = prey_isings[prey_ind].times_killed + 1
 
         #I.org_sens = org_sensor[i]
 

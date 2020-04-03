@@ -5,13 +5,17 @@ import sys
 import numpy as np
 import pickle
 
-def detect_all_isings(sim_name):
+def detect_all_isings(sim_name, type):
     '''
     Creates iter_list
     detects the ising generations in the isings folder
     '''
     curdir = os.getcwd()
-    mypath = curdir + '/save/{}/isings/'.format(sim_name)
+    if type == 'pred':
+        mypath = curdir + '/save/{}/pred_isings/'.format(sim_name)
+    elif type == 'prey':
+        mypath = curdir + '/save/{}/prey_isings/'.format(sim_name)
+
     all_isings = [f for f in listdir(mypath) if isfile(join(mypath, f)) and f.endswith('isings.pickle')]
     gen_nums = []
     for name in all_isings:
@@ -31,17 +35,21 @@ def load_settings(loadfile):
     settings = pickle.load(open(curdir + load_settings, 'rb'))
     return settings
 
-def load_isings(loadfile):
+def load_isings(loadfile, type):
     '''
     Load all isings pickle files and return them as list
     :param loadfile : simulation name
     '''
-    iter_list = detect_all_isings(loadfile)
+    iter_list = detect_all_isings(loadfile, type)
     settings = load_settings(loadfile)
-    numAgents = settings['pop_size']
+
     isings_list = []
     for ii, iter in enumerate(iter_list):
-        filename = 'save/' + loadfile + '/isings/gen[' + str(iter) + ']-isings.pickle'
+        if type == 'pred':
+            filename = 'save/' + loadfile + '/pred_isings/gen[' + str(iter) + ']-isings.pickle'
+        elif type == 'prey':
+            filename = 'save/' + loadfile + '/prey_isings/gen[' + str(iter) + ']-isings.pickle'
+
         startstr = 'Loading simulation:' + filename
         print(startstr)
 

@@ -19,15 +19,18 @@ loadfiles = ['beta_experiment/beta-0-1/sim-20180512-105719',
              'beta_experiment/beta-1/sim-20180511-163319',
              'beta_experiment/beta-10/sim-20180512-105824']
 '''
-def main(loadfile, settings, isings_list, plot_var_x, plot_var_y, s=0.8, alpha=0.13, autoLoad=True, x_lim=None,
+def main(loadfile, settings, isings_list, plot_var_x, plot_var_y, i_type, s=0.8, alpha=0.13, autoLoad=True, x_lim=None,
          y_lim=None, log=True, y_noise=True):
 
 
     loadfiles = [loadfile]#loadfiles = ['sim-20191114-000009_server']
-    iter_list = detect_all_isings(loadfile) #  iter_list = np.arange(0, 2000, 1)
+    iter_list = detect_all_isings(loadfile, i_type) #  iter_list = np.arange(0, 2000, 1)
     #
     energy_model = settings['energy_model']
-    numAgents = settings['pop_size']
+    if i_type == 'pred':
+        numAgents = settings['pop_size_pred']
+    elif i_type == 'prey':
+        numAgents = settings['pop_size_prey']
     #autoLoad = True
     saveFigBool = True
     fixGen2000 = False
@@ -74,7 +77,10 @@ def main(loadfile, settings, isings_list, plot_var_x, plot_var_y, s=0.8, alpha=0
     plt.ylabel('{}'.format(plot_var_y.replace('_', ' ')))
 
     folder = 'save/' + loadfile
-    savefolder = folder + '/figs/' + plot_var_x + '_vs_' + plot_var_y + '_line/'
+    if i_type == 'pred':
+        savefolder = folder + '/figs_pred/' + plot_var_x + '_vs_' + plot_var_y + '_line/'
+    elif i_type == 'prey':
+        savefolder = folder + '/figs_prey/' + plot_var_x + '_vs_' + plot_var_y + '_line/'
     savefilename = savefolder + plot_var_x + '_vs_' + plot_var_y + '_gen' + str(iter_list[0]) + '-' + str(
         iter_list[-1]) + '.png'
     if not path.exists(savefolder):

@@ -9,7 +9,7 @@ from automatic_plot_helper import load_settings
 
 
 
-def main(sim_name, settings, generation_list):
+def main(sim_name, settings, generation_list, i_type):
 
     # TODO: make these scripts take these as params
     loadfile = sim_name
@@ -27,16 +27,24 @@ def main(sim_name, settings, generation_list):
     R = 10
     Nbetas = 102
     betas = 10 ** np.linspace(-1, 1, Nbetas)
-    numAgents = settings['pop_size']
+    if i_type == 'pred':
+        numAgents = settings['pop_size_pred']
+    elif i_type == 'prey':
+        numAgents = settings['pop_size_prey']
     size = settings['size']
 
     C = np.zeros((R, numAgents, Nbetas, len(iter_gen)))
 
     print('Loading data...')
+    if i_type == 'pred':
+        C_folder_name = 'C_pred'
+    elif i_type == 'prey':
+        C_folder_name = 'C_prey'
+
     for ii, iter in enumerate(iter_gen):
         #for bind in np.arange(0, 100):
         for bind in np.arange(1, 100):
-            filename = folder + '/C/C_' + str(iter) + '/C-size_' + str(size) + '-Nbetas_' + \
+            filename = folder + '/' + C_folder_name + '/C_' + str(iter) + '/C-size_' + str(size) + '-Nbetas_' + \
                        str(Nbetas) + '-bind_' + str(bind) + '.npy'
             C[:, :, bind, ii] = np.load(filename)
     print('Done.')
@@ -82,8 +90,11 @@ def main(sim_name, settings, generation_list):
         # for lh in leg.legendHandles:
         #     lh.set_alpha(1)
         #     lh.set_sizes(30)
+        if i_type == 'pred':
+            savefolder = folder + '/figs_pred/C/'
+        elif i_type == 'prey':
+            savefolder = folder + '/figs_prey/C/'
 
-        savefolder = folder + '/figs/C/'
         savefilename = savefolder + 'C-size_' + str(size) + '-Nbetas_' + \
                        str(Nbetas) + '-gen_' + str(iter) + '.png'
         if not path.exists(savefolder):

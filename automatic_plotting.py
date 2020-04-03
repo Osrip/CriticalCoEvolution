@@ -16,43 +16,58 @@ def main(sim_name, load_isings_list=True, final=False):
     '''
     final defines whether this is the final/ last generation of simulation is plotted
     '''
-    settings = load_settings(sim_name)
-    if load_isings_list:
-        isings_list = load_isings(sim_name)
-    try:
-        plot_anything_auto(sim_name, ['Beta', 'avg_velocity', 'food'], settings, isings_list=isings_list, autoLoad=False)
-    except Exception:
-        print('Could not create generational plots')
-    #plot_var_tuples = [('Beta', 'avg_velocity'), ('avg_energy', 'avg_velocity'), ('avg_energy', 'food')]
-    plot_var_tuples = [('generation', 'avg_energy'), ('generation', 'avg_velocity'), ('generation', 'food')]
-    try:
-        plot_scatter_auto(sim_name, settings, plot_var_tuples, isings_list, autoLoad=False)
-    except Exception:
-        print('Could not create scatter plot')
-    try:
-        plot_anythingXY_scatter_food_velocity_optimized.main(sim_name, settings, isings_list, 'avg_velocity', 'food', s=0.8,
-                                                             alpha=0.05, autoLoad=False)
-    except Exception:
-        print('Could not create food velocity scatter plot')
-    if final:
+
+
+    for i_type in ('pred', 'prey'):
+        settings = load_settings(sim_name)
+        if load_isings_list:
+            isings_list = load_isings(sim_name, i_type)
         #try:
-        compute_and_plot_heat_capacity_automatic.main(sim_name, settings)
+        if i_type == 'pred':
+            plot_var_list = ['Beta', 'avg_velocity', 'food']
+            plot_var_tuples = [('generation', 'avg_energy'), ('generation', 'avg_velocity'), ('generation', 'food')]
+
+        elif i_type == 'prey':
+            plot_var_list = ['Beta', 'avg_velocity', 'times_killed']
+            plot_var_tuples = [('generation', 'avg_energy'), ('generation', 'avg_velocity'), ('generation', 'times_killed')]
+
+        plot_anything_auto(sim_name, plot_var_list, settings, i_type, isings_list=isings_list, autoLoad=False)
+        # except Exception:
+        #     print('Could not create generational plots')
+        #plot_var_tuples = [('Beta', 'avg_velocity'), ('avg_energy', 'avg_velocity'), ('avg_energy', 'food')]
+
+        #try:
+        plot_scatter_auto(sim_name, settings, plot_var_tuples, isings_list, i_type, autoLoad=False)
+        # except Exception:
+        #     print('Could not create scatter plot')
+        #try:
+        if i_type == 'pred':
+            plot_anythingXY_scatter_food_velocity_optimized.main(sim_name, settings, isings_list, 'avg_velocity', 'food',
+                                                                 i_type, s=0.8, alpha=0.05, autoLoad=False)
+        elif i_type == 'prey':
+            plot_anythingXY_scatter_food_velocity_optimized.main(sim_name, settings, isings_list, 'avg_velocity', 'avg_energy',
+                                                                 i_type, s=0.8, alpha=0.05, autoLoad=False)
         #except Exception:
-        #    print('Could not compute and plot heat capacity')
+        #    print('Could not create food velocity scatter plot')
+        if final:
+            #try:
+            compute_and_plot_heat_capacity_automatic.main(sim_name, settings, i_type)
+            #except Exception:
+            #    print('Could not compute and plot heat capacity')
 
-    #  Trying to fix memory leak:
-    del isings_list
-    del settings
+        #  Trying to fix memory leak:
+        del isings_list
+        del settings
 
-    #plot_anythingXY_scatter_animation.main(sim_name, settings, isings_list, autoLoad=False, x_lim=None, y_lim=None)
-    #  TODO: Animation dies not work for some reasone when called from here but does work when it is called itself... WHY???
+        #plot_anythingXY_scatter_animation.main(sim_name, settings, isings_list, autoLoad=False, x_lim=None, y_lim=None)
+        #  TODO: Animation dies not work for some reasone when called from here but does work when it is called itself... WHY???
 
-def plot_scatter_auto(sim_name, settings, plot_var_tuples, isings_list, autoLoad = True):
+def plot_scatter_auto(sim_name, settings, plot_var_tuples, isings_list, i_type, autoLoad = True):
     for plot_var_x, plot_var_y in plot_var_tuples:
-        plot_anythingXY_scatter.main(sim_name, settings, isings_list, plot_var_x, plot_var_y, s=0.8, alpha=0.05,
+        plot_anythingXY_scatter.main(sim_name, settings, isings_list, plot_var_x, plot_var_y, i_type, s=0.8, alpha=0.05,
                                      autoLoad=autoLoad, name_extension='')
 
-def plot_anything_auto(sim_name, plot_vars, settings, isings_list = None, autoLoad = True):
+def plot_anything_auto(sim_name, plot_vars, settings, i_type, isings_list = None, autoLoad = True):
     '''
     :param plot_vars: List of string of which each represents an attribute of the isings class
     :param isings_list: List of all isings generations in case it has been loaded previously
@@ -60,13 +75,13 @@ def plot_anything_auto(sim_name, plot_vars, settings, isings_list = None, autoLo
 
     if settings['energy_model']:
         #os.system("python plot__anything_combined {} avg_energy".format(sim_name))
-        plot_anything_combined.main([sim_name], 'avg_energy', isings_lists=[isings_list], autoLoad=autoLoad)
+        plot_anything_combined.main([sim_name], 'avg_energy', i_type, isings_lists=[isings_list], autoLoad=autoLoad)
     else:
         #os.system("python plot__anything_combined {} fitness".format(sim_name))
-        plot_anything_combined.main([sim_name], 'fitness', isings_lists=[isings_list], autoLoad=autoLoad)
+        plot_anything_combined.main([sim_name], 'fitness', i_type, isings_lists=[isings_list], autoLoad=autoLoad)
 
     for plot_var in plot_vars:
-        plot_anything_combined.main([sim_name], plot_var, isings_lists=[isings_list], autoLoad=autoLoad, scatter=True)
+        plot_anything_combined.main([sim_name], plot_var, i_type, isings_lists=[isings_list], autoLoad=autoLoad, scatter=True)
 
 
 
