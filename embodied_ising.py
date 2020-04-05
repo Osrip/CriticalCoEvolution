@@ -1114,7 +1114,7 @@ def EvolutionLearning(pred_isings, prey_isings, settings, Iterations = 1):
                 try:
                     #automatic_plotting.main(sim_name)
                     #  WRONGLY ALSO ACTIVATED final_true on purpose
-                    os.system('python3 automatic_plotting.py {} final_true'.format(sim_name))
+                    os.system('python3 automatic_plotting.py {} final_false'.format(sim_name))
                     #subprocess.Popen(['python3', 'automatic_plotting.py', sim_name])
                 except Exception:
                     print('Something went wrong when refreshing plot at generation{}'.format(rep))

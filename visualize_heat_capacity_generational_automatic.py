@@ -9,6 +9,7 @@ from automatic_plot_helper import load_settings
 
 
 
+
 def main(sim_name, settings, generation_list, i_type):
 
     # TODO: make these scripts take these as params
@@ -29,9 +30,11 @@ def main(sim_name, settings, generation_list, i_type):
     betas = 10 ** np.linspace(-1, 1, Nbetas)
     if i_type == 'pred':
         numAgents = settings['pop_size_pred']
+        size = settings['pred_size']
     elif i_type == 'prey':
         numAgents = settings['pop_size_prey']
-    size = settings['size']
+        size = settings['prey_size']
+
 
     C = np.zeros((R, numAgents, Nbetas, len(iter_gen)))
 

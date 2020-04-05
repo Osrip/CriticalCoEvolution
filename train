@@ -25,7 +25,7 @@ def create_settings():
     settings['pop_size_prey'] = args.pop_size_prey #50  # number of organisms #150
     settings['prey_numKill'] = int(settings['pop_size_prey'] / 1.66)
 
-    settings['prey_eat_energy'] = args.food_energy
+    settings['prey_eat_energy'] = args.eat_energy
     settings['pred_radius'] = 0.05
     settings['prey_radius'] = 0.045   #  Predator radius has to go through midt point of prey, so prey radius does not effect simulation - only visual change
     settings['ANN'] = False  # Use ANN or Ising?
@@ -141,7 +141,7 @@ def parse():
                                      save_data=True, plot=False, iterations=2000, time_steps=2000, plot_gens=[], fps=20,
                         loadfile='', loaditer = 1999, pop_size=50, food_num=100, init_beta=1.0, seasons=False,
                         server_mode = False, cost_speed=0.05, v_max=999.0, v_min=0.05, sig_beta=0.02, no_mut_beta=False,
-                        init_energy=2, food_energy=1, no_ener_mod=False, plot_pipeline=True, chg_food_gen=None,
+                        init_energy=2, eat_energy=1, no_ener_mod=False, plot_pipeline=True, chg_food_gen=None,
                         years_per_iteration=1, min_food_winter=0.1, thermal_time=3, diff_init_betas=None, acc_motor=True,
                         a_max=0.05
                                      ''')
@@ -185,7 +185,7 @@ def parse():
                         help='FLOAT [0,1] energy cost of speed as a factor of speed (linear function)')
     parser.add_argument('-ie', '--init_en', dest='init_energy', type=float,
                         help='initial energy at beginning of each generation in energy model')
-    parser.add_argument('-pe', '--prey_eat_energy', type=float, dest ='food_energy',
+    parser.add_argument('-pe', '--prey_eat_energy', type=float, dest ='eat_energy',
                         help='Amount of energy, that individual gets from eating food particle')
     parser.add_argument('-ne', '--no_energy', dest='no_ener_mod', action='store_true',
                         help='Switch off energy model and instead optimize for maximal number of foods eaten')
@@ -209,7 +209,7 @@ def parse():
     parser.set_defaults(save_data=True, plot=False, iterations=2000, time_steps=2000, plot_gens=[], fps=20,
                         loadfile='', loaditer = 1999, pop_size_pred=50, pop_size_prey=100, init_beta=1.0, seasons=False,
                         server_mode = False, cost_speed=0.05, v_max=999.0, v_min=0.05, sig_beta=0.02, no_mut_beta=False,
-                        init_energy=2, food_energy=1, no_ener_mod=False, plot_pipeline=True, chg_food_gen=None,
+                        init_energy=2, eat_energy=3, no_ener_mod=False, plot_pipeline=True, chg_food_gen=None,
                         years_per_iteration=1, min_food_winter=0.1, thermal_time=10, diff_init_betas=None, acc_motor=True,
                         a_max=0.05, refresh_plot=1000, laptop_mode=False)
     args = parser.parse_args()

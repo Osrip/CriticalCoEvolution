@@ -31,29 +31,31 @@ def main(sim_name, load_isings_list=True, final=False):
             plot_var_list = ['Beta', 'avg_velocity', 'times_killed']
             plot_var_tuples = [('generation', 'avg_energy'), ('generation', 'avg_velocity'), ('generation', 'times_killed')]
 
-        plot_anything_auto(sim_name, plot_var_list, settings, i_type, isings_list=isings_list, autoLoad=False)
-        # except Exception:
-        #     print('Could not create generational plots')
+        try:
+            plot_anything_auto(sim_name, plot_var_list, settings, i_type, isings_list=isings_list, autoLoad=False)
+        except Exception:
+            print('Could not create generational plots')
         #plot_var_tuples = [('Beta', 'avg_velocity'), ('avg_energy', 'avg_velocity'), ('avg_energy', 'food')]
 
-        #try:
-        plot_scatter_auto(sim_name, settings, plot_var_tuples, isings_list, i_type, autoLoad=False)
-        # except Exception:
-        #     print('Could not create scatter plot')
-        #try:
-        if i_type == 'pred':
-            plot_anythingXY_scatter_food_velocity_optimized.main(sim_name, settings, isings_list, 'avg_velocity', 'food',
-                                                                 i_type, s=0.8, alpha=0.05, autoLoad=False)
-        elif i_type == 'prey':
-            plot_anythingXY_scatter_food_velocity_optimized.main(sim_name, settings, isings_list, 'avg_velocity', 'avg_energy',
-                                                                 i_type, s=0.8, alpha=0.05, autoLoad=False)
-        #except Exception:
-        #    print('Could not create food velocity scatter plot')
+        try:
+            plot_scatter_auto(sim_name, settings, plot_var_tuples, isings_list, i_type, autoLoad=False)
+        except Exception:
+            print('Could not create scatter plot')
+        try:
+            if i_type == 'pred':
+                plot_anythingXY_scatter_food_velocity_optimized.main(sim_name, settings, isings_list, 'avg_velocity', 'food',
+                                                                     i_type, s=0.8, alpha=0.05, autoLoad=False)
+            elif i_type == 'prey':
+                plot_anythingXY_scatter_food_velocity_optimized.main(sim_name, settings, isings_list, 'avg_velocity', 'avg_energy',
+                                                                     i_type, s=0.8, alpha=0.05, autoLoad=False)
+        except Exception:
+            print('Could not create food velocity scatter plot')
+
         if final:
-            #try:
-            compute_and_plot_heat_capacity_automatic.main(sim_name, settings, i_type)
-            #except Exception:
-            #    print('Could not compute and plot heat capacity')
+            try:
+                compute_and_plot_heat_capacity_automatic.main(sim_name, settings, i_type)
+            except Exception:
+                print('Could not compute and plot heat capacity')
 
         #  Trying to fix memory leak:
         del isings_list
