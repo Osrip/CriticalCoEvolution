@@ -13,7 +13,7 @@ def main(sim_name, settings, i_type):
 def compute_plot_heat_capacity(sim_name, generation_list, cores, settings, i_type):
     gens_str = list_to_blank_seperated_str(generation_list)
     os.system('bash bash-heat-capacity-generational-automatic.sh {} "{}" {} {}'.format(sim_name, gens_str, cores, i_type))
-    #visualize_heat_capacity_generational_automatic.main(sim_name, settings, generation_list, i_type)
+    #visualize_heat_capacity_generational_automatic.main(sim_name, settings, i_type)
 
 if __name__ == '__main__':
 

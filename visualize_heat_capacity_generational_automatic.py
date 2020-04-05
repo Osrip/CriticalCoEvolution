@@ -5,16 +5,26 @@ import matplotlib.pyplot as plt
 import matplotlib
 from os import path, makedirs
 from automatic_plot_helper import load_settings
+import os
+from os import listdir
+from os.path import isfile, join
 
 
 
 
 
-def main(sim_name, settings, generation_list, i_type):
+def main(sim_name, settings, i_type):
 
     # TODO: make these scripts take these as params
     loadfile = sim_name
+
+    if i_type == 'pred':
+        C_folder_name = 'C_pred'
+    elif i_type == 'prey':
+        C_folder_name = 'C_prey'
+
     folder = 'save/' + loadfile
+    C_folder = folder + '/' + C_folder_name
     # iter_gen = np.arange(0, 2000, 250)
     # iter_gen = np.append(iter_gen, 1999)
     # iter_gen = [0, 252, 504, 756, 1002, 1254, 1500, 1752, 1998]
@@ -23,7 +33,7 @@ def main(sim_name, settings, generation_list, i_type):
     # iter_gen = [0, 250, 500, 750, 1000, 1250, 1500, 1750, 1999,
     #            2250, 2500, 2750, 3000, 3250, 3500, 3750, 3999]
     #iter_gen = [1, 2, 3, 10, 20, 30, 40, 300, 600, 900, 1000, 1300, 1600, 1900, 2300, 2500, 2800, 3100, 3400, 3700, 3990]
-    iter_gen = generation_list
+
 
     R = 10
     Nbetas = 102
@@ -36,21 +46,31 @@ def main(sim_name, settings, generation_list, i_type):
         size = settings['prey_size']
 
 
-    C = np.zeros((R, numAgents, Nbetas, len(iter_gen)))
+
 
     print('Loading data...')
-    if i_type == 'pred':
-        C_folder_name = 'C_pred'
-    elif i_type == 'prey':
-        C_folder_name = 'C_prey'
 
-    for ii, iter in enumerate(iter_gen):
-        #for bind in np.arange(0, 100):
-        for bind in np.arange(1, 100):
-            filename = folder + '/' + C_folder_name + '/C_' + str(iter) + '/C-size_' + str(size) + '-Nbetas_' + \
-                       str(Nbetas) + '-bind_' + str(bind) + '.npy'
-            C[:, :, bind, ii] = np.load(filename)
+    C_gen_folders = [f.path for f in os.scandir(C_folder) if f.is_dir()]
+
+    #  C = np.zeros((R, numAgents, Nbetas, len(iter_gen)))
+    C = np.zeros((R, numAgents, Nbetas, len(C_gen_folders)))
+    generation_list = get_generations(C_gen_folders)
+    iter_gen = generation_list
+
+    for ii, C_gen_folder in enumerate(C_gen_folders):
+        C_files = [f for f in listdir(C_gen_folder) if isfile(join(C_gen_folder, f)) and f.startswith('C-size')]
+        for bind, C_file in enumerate(C_files):
+            C[:, :, bind, ii] = np.load('{}/{}'.format(C_gen_folder, C_file))
+
     print('Done.')
+
+    # for ii, iter in enumerate(iter_gen):
+    #     #for bind in np.arange(0, 100):
+    #     for bind in np.arange(1, 100):
+    #         filename = folder  + '/C_' + str(iter) + '/C-size_' + str(size) + '-Nbetas_' + \
+    #                    str(Nbetas) + '-bind_' + str(bind) + '.npy'
+    #         C[:, :, bind, ii] = np.load(filename)
+    # print('Done.')
 
     plt.rc('text', usetex=True)
     font = {'family': 'serif', 'size': 28, 'serif': ['computer modern roman']}
@@ -111,9 +131,22 @@ def main(sim_name, settings, generation_list, i_type):
         # plt.show()
         # plt.pause(0.1)
 
+def get_generations(C_gen_folders):
+    generation_list = []
+    for C_gen_folder in C_gen_folders:
+        if RepresentsInt(C_gen_folder.split('_')[-1]) is True:
+            generation_list.append(C_gen_folder.split('_')[-1])
+    return generation_list
+
+def RepresentsInt(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 if __name__ == '__main__':
-    sim_name = 'sim-20200327-215421-g_8000_-b_10_-ref_2000_-a_500_1000_2000_4000_6000_8000_-n_4_sensors'
+    sim_name = 'sim-20200403-211857-g_4000_-t_2000_-b_0.1_-ref_250_-a_0_250_500_750_1000_1500_2000_3000_3999_-n_second_test_pred_prey'
     generation_list = [0, 4000]
     settings = load_settings(sim_name)
-    main(sim_name, settings, generation_list)
+    main(sim_name, settings, 'pred')
