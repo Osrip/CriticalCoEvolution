@@ -75,53 +75,57 @@ def main(sim_name, settings, generation_list, i_type):
     print('Generating figures...')
     for ii, iter in enumerate(iter_gen):
 
-        fig, ax = plt.subplots(1, 1, figsize=(11, 10), sharex=True)
-        fig.text(0.51, 0.035, r'$\beta$', ha='center', fontsize=28)
-        fig.text(0.005, 0.5, r'$C/N$', va='center', rotation='vertical', fontsize=28)
-        title = 'Specific Heat of Foraging Community\n Generation: ' + str(iter)
-        fig.suptitle(title)
+        try:
 
-        # CHANGE THIS TO CUSTOMIZE HEIGHT OF PLOT
-        upperbound = 1.5 * np.max(np.mean(np.mean(C[:, :, :-40, :], axis=0), axis=0))
-        # upperbound = np.max(np.mean(np.mean(C, axis=0)), axis=0)
-        upperbound = 0.4
+            fig, ax = plt.subplots(1, 1, figsize=(11, 10), sharex=True)
+            fig.text(0.51, 0.035, r'$\beta$', ha='center', fontsize=28)
+            fig.text(0.005, 0.5, r'$C/N$', va='center', rotation='vertical', fontsize=28)
+            title = 'Specific Heat of Foraging Community\n Generation: ' + str(iter)
+            fig.suptitle(title)
 
-        label = iter
+            # CHANGE THIS TO CUSTOMIZE HEIGHT OF PLOT
+            upperbound = 1.5 * np.max(np.mean(np.mean(C[:, :, :-40, :], axis=0), axis=0))
+            # upperbound = np.max(np.mean(np.mean(C, axis=0)), axis=0)
+            upperbound = 0.4
 
-        for numOrg in range(numAgents):
-            c = np.dot(np.random.random(), [1, 1, 1])
-            ax.scatter(betas, np.mean(C[:, numOrg, :, ii], axis=0),
-                       color=[0, 0, 0], s=30, alpha=alpha, marker='x', label=label)
+            label = iter
 
-        xticks = [0.1, 0.5, 1, 2, 4, 10]
-        ax.set_xscale("log", nonposx='clip')
-        ax.set_xticks(xticks)
-        ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+            for numOrg in range(numAgents):
+                c = np.dot(np.random.random(), [1, 1, 1])
+                ax.scatter(betas, np.mean(C[:, numOrg, :, ii], axis=0),
+                           color=[0, 0, 0], s=30, alpha=alpha, marker='x', label=label)
 
-        plt.axis([0.1, 10, 0, upperbound])
+            xticks = [0.1, 0.5, 1, 2, 4, 10]
+            ax.set_xscale("log", nonposx='clip')
+            ax.set_xticks(xticks)
+            ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 
-        # leg = plt.legend(loc=2, title='Generation')
-        #
-        # for lh in leg.legendHandles:
-        #     lh.set_alpha(1)
-        #     lh.set_sizes(30)
-        if i_type == 'pred':
-            savefolder = folder + '/figs_pred/C/'
-        elif i_type == 'prey':
-            savefolder = folder + '/figs_prey/C/'
+            plt.axis([0.1, 10, 0, upperbound])
 
-        savefilename = savefolder + 'C-size_' + str(size) + '-Nbetas_' + \
-                       str(Nbetas) + '-gen_' + str(iter) + '.png'
-        if not path.exists(savefolder):
-            makedirs(savefolder)
+            # leg = plt.legend(loc=2, title='Generation')
+            #
+            # for lh in leg.legendHandles:
+            #     lh.set_alpha(1)
+            #     lh.set_sizes(30)
+            if i_type == 'pred':
+                savefolder = folder + '/figs_pred/C/'
+            elif i_type == 'prey':
+                savefolder = folder + '/figs_prey/C/'
 
-        plt.savefig(savefilename, bbox_inches='tight')
-        plt.close()
-        # plt.clf()
-        savemsg = 'Saving ' + savefilename
-        print(savemsg)
-        # plt.show()
-        # plt.pause(0.1)
+            savefilename = savefolder + 'C-size_' + str(size) + '-Nbetas_' + \
+                           str(Nbetas) + '-gen_' + str(iter) + '.png'
+            if not path.exists(savefolder):
+                makedirs(savefolder)
+
+            plt.savefig(savefilename, bbox_inches='tight')
+            plt.close()
+            # plt.clf()
+            savemsg = 'Saving ' + savefilename
+            print(savemsg)
+            # plt.show()
+            # plt.pause(0.1)
+        except Exception:
+            print('Could not plot generation {} in sim {}'.format(iter, sim_name))
 
 def automatic_generation_generation_list(C_folder):
     C_gen_folders = [f.path for f in os.scandir(C_folder) if f.is_dir()]
