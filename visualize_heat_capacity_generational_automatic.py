@@ -147,7 +147,7 @@ def RepresentsInt(s):
         return False
 
 if __name__ == '__main__':
-    sim_name = 'sim-20200403-211857-g_4000_-t_2000_-b_0.1_-ref_250_-a_0_250_500_750_1000_1500_2000_3000_3999_-n_second_test_pred_prey'
+    sim_name = 'sim-20200403-211835-g_4000_-t_2000_-b_10_-ref_250_-a_0_250_500_750_1000_1500_2000_3000_3999_-n_second_test_pred_prey'
     generation_list = [0, 1254]
     settings = load_settings(sim_name)
     main(sim_name, settings, None, 'pred')
