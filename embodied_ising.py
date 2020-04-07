@@ -189,8 +189,8 @@ class ising:
         self.s[2] = np.tanh(random_v)
 
 
-        # random_energy = np.random.rand() * self.prey_num_env <-- This would have to be changed for prey
-        # self.s[3] = np.tanh(random_energy)
+        #random_energy = np.random.rand() * self.prey_num_env # <-- This would have to be changed for prey
+        self.s[3] = np.tanh(random_energy)
 
     def randomize_position(self, settings):
 
@@ -576,7 +576,10 @@ class ising:
     def reset_state(self, settings):
 
         # randomize internal state (not using self.random_state since it also randomizes sensors)
-        self.s = np.random.random(size=self.size) * 2 - 1
+
+        # TODO: Leave this line away or not??
+        # self.s = np.random.random(size=self.size) * 2 - 1
+
         # randomize position (not using self.randomize_position function since it also randomizes velocity)
         self.xpos = uniform(settings['x_min'], settings['x_max'])  # position (x)
         self.ypos = uniform(settings['y_min'], settings['y_max'])  # position (y)
