@@ -54,7 +54,9 @@ def load_isings(loadfile, type):
         print(startstr)
 
         try:
-            isings = pickle.load(open(filename, 'rb'))
+            file = open(filename, 'rb')
+            isings = pickle.load(file)
+            file.close()
         except Exception:
             print("Error while loading %s. Skipped file" % filename)
             # Leads to the previous datapoint being drawn twice!!
@@ -77,7 +79,9 @@ def load_isings_from_list(loadfile, iter_list):
         print(startstr)
 
         try:
-            isings = pickle.load(open(filename, 'rb'))
+            file = open(filename, 'rb')
+            isings = pickle.load(file)
+            file.close()
         except Exception:
             print("Error while loading %s. Skipped file" % filename)
             # Leads to the previous datapoint being drawn twice!!
