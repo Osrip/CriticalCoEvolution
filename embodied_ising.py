@@ -582,7 +582,7 @@ class ising:
         # TODO: Leave this line away or not??
         # self.s = np.random.random(size=self.size) * 2 - 1
         self.randomize_state()
-        
+
         # randomize position (not using self.randomize_position function since it also randomizes velocity)
         self.xpos = uniform(settings['x_min'], settings['x_max'])  # position (x)
         self.ypos = uniform(settings['y_min'], settings['y_max'])  # position (y)
