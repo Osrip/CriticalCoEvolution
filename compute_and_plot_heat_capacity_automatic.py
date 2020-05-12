@@ -4,9 +4,10 @@ from automatic_plot_helper import load_settings
 import visualize_heat_capacity_generational_automatic
 import os
 
-def main(sim_name, settings, i_type):
-    gen_nums = detect_all_isings(sim_name, i_type)
-    generations = [0, gen_nums[-1]]
+def main(sim_name, settings, i_type, generations = None):
+    if generations is None:
+        gen_nums = detect_all_isings(sim_name, i_type)
+        generations = [gen_nums[-1]]
     cores = settings['cores']
     compute_plot_heat_capacity(sim_name, generations, cores, settings, i_type)
 

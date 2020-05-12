@@ -39,6 +39,7 @@ import subprocess
 #import random
 #from tqdm import tqdm
 #from pympler import tracker
+import compute_and_plot_heat_capacity_automatic
 
 
 
@@ -1124,6 +1125,19 @@ def EvolutionLearning(pred_isings, prey_isings, settings, Iterations = 1):
                     #subprocess.Popen(['python3', 'automatic_plotting.py', sim_name])
                 except Exception:
                     print('Something went wrong when refreshing plot at generation{}'.format(rep))
+
+        if not settings['dream_heat_capacity'] is 0:
+            if rep % settings['dream_heat_capacity'] == 0 and rep != 0:
+                #try:
+                if settings['dream_heat_capacity'] - rep == 0:
+                    # During first refresh plot, compute heat capacity of gen 0
+                    for i_type in ['pred', 'prey']:
+                        compute_and_plot_heat_capacity_automatic.main(sim_name, settings, i_type, generations=[0])
+
+                #automatic_plotting.main(sim_name)
+                #  WRONGLY ALSO ACTIVATED final_true on purpose
+                for i_type in ['pred', 'prey']:
+                    compute_and_plot_heat_capacity_automatic.main(sim_name, settings, i_type)
 
         #tr.print_diff()
     # Plot simulation at end even is refresh is inactive, but only if refresh has not already done that
