@@ -4,6 +4,10 @@ import os
 import sys
 import numpy as np
 import pickle
+import psutil
+from pathlib import Path
+import time
+import warnings
 
 def detect_all_isings(sim_name, type):
     '''
@@ -95,3 +99,32 @@ def list_to_blank_seperated_str(list):
         out_str += str(en) + ' '
     out_str = out_str[:-1]
     return out_str
+
+def wait_for_enough_memory(sim_name):
+    '''
+    Stops program until enough memory is available to load in all ising files
+    '''
+
+    root_directory = Path('save/{}/prey_isings'.format(sim_name))
+    size_prey_isings_folder = sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
+
+    root_directory = Path('save/{}/pred_isings'.format(sim_name))
+    size_pred_isings_folder = sum(f.stat().st_size for f in root_directory.glob('**/*') if f.is_file())
+
+    size_isings_folder = size_pred_isings_folder + size_prey_isings_folder
+
+    memory_data = psutil.virtual_memory()
+    available_memory = memory_data.available
+    total_system_memory = memory_data.active
+
+    if total_system_memory < size_isings_folder:
+        raise warnings.warn("Your system's memory is not sufficient to load in isings file. Attempting it anyways hoping for enough swap")
+    else:
+        waited_seconds = 0
+        while available_memory < size_isings_folder:
+            time.sleep(10)
+            waited_seconds += 10
+            if waited_seconds > 1200:
+                warnings.warn('''After 20 minutes there is still not enough memory available for plotting,
+                 trying to plot now anyways hoping for enough swap space.''')
+                break
